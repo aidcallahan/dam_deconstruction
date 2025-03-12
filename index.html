@@ -37,9 +37,6 @@
             showImagery(); // Show imagery (either pre or post-demolition) when marker is clicked
         });
 
-        // Initialize Earth Engine API
-        ee.initialize(); // Skip authentication since we're using public data
-
         // Flag to toggle between pre and post-demolition imagery
         var isPreDemolition = true; // Initially show pre-demolition imagery
         var currentLayer = null; // Variable to hold the current imagery layer
@@ -64,26 +61,11 @@
         function showPreDemolitionImagery() {
             console.log('Loading pre-demolition imagery (2017)');
             
-            // Define Sentinel-2 imagery for pre-demolition (2017)
-            var preDemolition = ee.ImageCollection('COPERNICUS/S2')
-                .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
-                .filterDate('2017-01-01', '2017-12-31')
-                .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-                .median(); // Use median to reduce cloud cover and noise
-
-            // Visualization parameters for the Sentinel-2 data (RGB)
-            var visParams = {
-                bands: ['B4', 'B3', 'B2'], // Red, Green, Blue bands
-                min: 0,
-                max: 3000
-            };
-
-            // Get the Earth Engine map ID for rendering imagery
-            var mapId = preDemolition.getMapId(visParams);
-            console.log('Pre-demolition Map ID generated:', mapId);
+            // Public Earth Engine Tile service for Sentinel-2 imagery (2017)
+            var preDemolitionTileUrl = "https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/6a230db9f6b2ee500c8f319a1e98965c";
 
             // Add the Earth Engine imagery as a Leaflet tile layer
-            currentLayer = L.tileLayer('https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + mapId.mapid, {
+            currentLayer = L.tileLayer(preDemolitionTileUrl, {
                 attribution: 'Earth Engine',
                 tileSize: 256
             }).addTo(map);
@@ -94,26 +76,11 @@
         function showPostDemolitionImagery() {
             console.log('Loading post-demolition imagery (2019)');
             
-            // Define Sentinel-2 imagery for post-demolition (2019)
-            var postDemolition = ee.ImageCollection('COPERNICUS/S2')
-                .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
-                .filterDate('2019-01-01', '2019-12-31')
-                .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-                .median(); // Use median to reduce cloud cover and noise
-
-            // Visualization parameters for the Sentinel-2 data (RGB)
-            var visParams = {
-                bands: ['B4', 'B3', 'B2'], // Red, Green, Blue bands
-                min: 0,
-                max: 3000
-            };
-
-            // Get the Earth Engine map ID for rendering imagery
-            var mapId = postDemolition.getMapId(visParams);
-            console.log('Post-demolition Map ID generated:', mapId);
+            // Public Earth Engine Tile service for Sentinel-2 imagery (2019)
+            var postDemolitionTileUrl = "https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/6a230db9f6b2ee500c8f319a1e98965c";  // Replace with actual post-demolition layer
 
             // Add the Earth Engine imagery as a Leaflet tile layer
-            currentLayer = L.tileLayer('https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + mapId.mapid, {
+            currentLayer = L.tileLayer(postDemolitionTileUrl, {
                 attribution: 'Earth Engine',
                 tileSize: 256
             }).addTo(map);
