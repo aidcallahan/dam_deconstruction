@@ -33,58 +33,91 @@
 
         // Event listener for the marker click
         damMarker.on('click', function() {
-            console.log('Marker clicked. Loading pre-demolition imagery.');
-            showPreDemolitionImagery(); // Show pre-demolition imagery when marker is clicked
+            console.log('Marker clicked. Toggling between pre and post-demolition imagery.');
+            showImagery(); // Show imagery (either pre or post-demolition) when marker is clicked
         });
 
         // Initialize Earth Engine API
-        function initializeEarthEngine() {
-            ee.data.authenticateViaBrowser(function() {
-                console.log('Earth Engine authentication successful');
-                ee.initialize(null, null, function() {
-                    console.log('Earth Engine initialized successfully');
-                }, function(error) {
-                    console.error('Earth Engine initialization failed:', error);
-                });
-            }, function(error) {
-                console.error('Earth Engine authentication failed:', error);
-            });
+        ee.initialize(); // Skip authentication since we're using public data
+
+        // Flag to toggle between pre and post-demolition imagery
+        var isPreDemolition = true; // Initially show pre-demolition imagery
+        var currentLayer = null; // Variable to hold the current imagery layer
+
+        // Function to show pre or post-demolition imagery based on the flag
+        function showImagery() {
+            if (currentLayer) {
+                map.removeLayer(currentLayer); // Remove the existing layer if present
+            }
+
+            if (isPreDemolition) {
+                showPreDemolitionImagery(); // Show pre-demolition imagery
+            } else {
+                showPostDemolitionImagery(); // Show post-demolition imagery
+            }
+
+            // Toggle the flag for the next click
+            isPreDemolition = !isPreDemolition;
         }
 
-        // Call initialization function when the page loads
-        initializeEarthEngine();
-
-        // Function to show pre-demolition imagery from Earth Engine
+        // Function to show pre-demolition imagery from Earth Engine (2017)
         function showPreDemolitionImagery() {
-            if (typeof ee !== 'undefined') {
-                console.log('Initializing Earth Engine...');
-                
-                // Define Sentinel-2 imagery for pre-demolition (2017)
-                var preDemolition = ee.ImageCollection('COPERNICUS/S2')
-                    .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
-                    .filterDate('2017-01-01', '2017-12-31')
-                    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-                    .median();
+            console.log('Loading pre-demolition imagery (2017)');
+            
+            // Define Sentinel-2 imagery for pre-demolition (2017)
+            var preDemolition = ee.ImageCollection('COPERNICUS/S2')
+                .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
+                .filterDate('2017-01-01', '2017-12-31')
+                .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+                .median(); // Use median to reduce cloud cover and noise
 
-                // Visualize the imagery (RGB)
-                var visParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
+            // Visualization parameters for the Sentinel-2 data (RGB)
+            var visParams = {
+                bands: ['B4', 'B3', 'B2'], // Red, Green, Blue bands
+                min: 0,
+                max: 3000
+            };
 
-                // Get the Earth Engine map ID for rendering imagery
-                preDemolition.getMapId(visParams, function(mapId) {
-                    console.log('Map ID generated:', mapId);
+            // Get the Earth Engine map ID for rendering imagery
+            var mapId = preDemolition.getMapId(visParams);
+            console.log('Pre-demolition Map ID generated:', mapId);
 
-                    // Add the Earth Engine imagery as a Leaflet tile layer
-                    var eeLayer = L.tileLayer('https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + mapId.mapid, {
-                        attribution: 'Earth Engine',
-                        tileSize: 256
-                    }).addTo(map);
-                    console.log('Earth Engine layer added to the map');
-                }, function(error) {
-                    console.error('Error retrieving Map ID:', error);
-                });
-            } else {
-                console.error('Earth Engine is not initialized.');
-            }
+            // Add the Earth Engine imagery as a Leaflet tile layer
+            currentLayer = L.tileLayer('https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + mapId.mapid, {
+                attribution: 'Earth Engine',
+                tileSize: 256
+            }).addTo(map);
+            console.log('Pre-demolition Earth Engine layer added to the map');
+        }
+
+        // Function to show post-demolition imagery from Earth Engine (2019)
+        function showPostDemolitionImagery() {
+            console.log('Loading post-demolition imagery (2019)');
+            
+            // Define Sentinel-2 imagery for post-demolition (2019)
+            var postDemolition = ee.ImageCollection('COPERNICUS/S2')
+                .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
+                .filterDate('2019-01-01', '2019-12-31')
+                .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+                .median(); // Use median to reduce cloud cover and noise
+
+            // Visualization parameters for the Sentinel-2 data (RGB)
+            var visParams = {
+                bands: ['B4', 'B3', 'B2'], // Red, Green, Blue bands
+                min: 0,
+                max: 3000
+            };
+
+            // Get the Earth Engine map ID for rendering imagery
+            var mapId = postDemolition.getMapId(visParams);
+            console.log('Post-demolition Map ID generated:', mapId);
+
+            // Add the Earth Engine imagery as a Leaflet tile layer
+            currentLayer = L.tileLayer('https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + mapId.mapid, {
+                attribution: 'Earth Engine',
+                tileSize: 256
+            }).addTo(map);
+            console.log('Post-demolition Earth Engine layer added to the map');
         }
     </script>
 </body>
