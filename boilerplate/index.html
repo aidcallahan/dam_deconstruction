@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dam Deconstruction Webmap</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/earthengine-api@0.1.170/dist/ee_api.min.js"></script>
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([37.0000, -104.5000], 12); // Adjust the coordinates of the dam site
+
+        // Add OpenStreetMap basemap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Define a marker for the dam location
+        var damMarker = L.marker([37.0000, -104.5000]).addTo(map); // Adjust coordinates to actual dam site
+        damMarker.bindPopup("DAM").openPopup();
+
+        // Handle click event on the marker
+        damMarker.on('click', function() {
+            showPreDemolitionImagery(); // Show the pre-demolition imagery
+        });
+
+        // Add Sentinel-2 imagery as a layer (you can use Google Earth Engine API here)
+        function showPreDemolitionImagery() {
+            // Initialize the Earth Engine API
+            ee.initialize();
+
+            // Sentinel-2 pre-demolition imagery for 2017 (adjust as per the original code)
+            var preDemolition = ee.ImageCollection('COPERNICUS/S2')
+                .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Adjust location
+                .filterDate('2017-01-01', '2017-12-31')
+                .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+                .median();
+
+            // Visualize the imagery (this should be styled as RGB for true-color)
+            var visParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
+            var preDemolitionLayer = ui.Map.Layer(preDemolition, visParams, 'Pre-Demolition 2017');
+            
+            // Add to Earth Engine layer
+            preDemolitionLayer.addTo(map);
+        }
+
+        // You can add a post-demolition imagery layer as well, using the same concept
+        // Example for post-demolition imagery (2019) can be added here
+    </script>
+</body>
+</html>
