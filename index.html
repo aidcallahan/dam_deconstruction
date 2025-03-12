@@ -1,15 +1,38 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Script Load</title>
+    <title>Dam Deconstruction Webmap</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; }
+    </style>
 </head>
 <body>
-    <h1>Test Script</h1>
+    <div id="map"></div>  <!-- Map container -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        console.log("JavaScript is running!");
-        alert("Test - JavaScript loaded successfully!");
+        console.log("JavaScript is loaded and running!");
+
+        // Initialize the Leaflet map
+        var map = L.map('map').setView([37.0000, -104.5000], 12); // Coordinates of the dam
+        console.log("Leaflet map initialized");
+
+        // Add OpenStreetMap basemap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        console.log("OpenStreetMap layer added");
+
+        // Define a marker for the dam location (clickable)
+        var damMarker = L.marker([37.0000, -104.5000]).addTo(map); // Adjust coordinates
+        damMarker.bindPopup("DAM").openPopup();
+        console.log("Marker added");
+
+        // Event listener for the marker click
+        damMarker.on('click', function() {
+            console.log('Marker clicked');
+            // You can add Earth Engine code here if required
+        });
     </script>
 </body>
 </html>
