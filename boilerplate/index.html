@@ -7,11 +7,11 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body { margin: 0; padding: 0; }
-        #map { height: 100vh; }
+        #map { height: 100vh; } /* Make sure map takes full height */
     </style>
 </head>
 <body>
-    <div id="map"></div>
+    <div id="map"></div>  <!-- Map container -->
 
     <!-- Leaflet JS library -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -22,6 +22,7 @@
     <script>
         // Initialize the Leaflet map
         var map = L.map('map').setView([37.0000, -104.5000], 12); // Coordinates of the dam (adjust as needed)
+        console.log("Leaflet map initialized");
 
         // Add OpenStreetMap basemap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -32,12 +33,14 @@
 
         // Event listener for the marker click
         damMarker.on('click', function() {
+            console.log('Marker clicked. Loading pre-demolition imagery.');
             showPreDemolitionImagery(); // Show pre-demolition imagery when marker is clicked
         });
 
         // Function to show pre-demolition imagery from Earth Engine
         function showPreDemolitionImagery() {
             if (typeof ee !== 'undefined') {
+                console.log('Initializing Earth Engine...');
                 // Initialize Earth Engine API
                 ee.initialize(null, null, function() {
                     console.log('Earth Engine initialized successfully.');
@@ -54,12 +57,14 @@
 
                     // Get the Earth Engine map ID for rendering imagery
                     var mapId = preDemolition.getMapId(visParams);
+                    console.log('Map ID generated:', mapId);
 
                     // Add the Earth Engine imagery as a Leaflet tile layer
                     var eeLayer = L.tileLayer('https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + mapId.mapid, {
                         attribution: 'Earth Engine',
                         tileSize: 256
                     }).addTo(map);
+                    console.log('Earth Engine layer added to the map');
                 }, function(error) {
                     console.error('Earth Engine initialization failed:', error);
                 });
