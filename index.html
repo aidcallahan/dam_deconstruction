@@ -38,32 +38,39 @@
         });
 
         // Initialize Earth Engine API
-        ee.initialize(null, null, function() {
-            console.log('Earth Engine initialized successfully');
-        }, function(error) {
-            console.error('Earth Engine initialization failed:', error);
-        });
+        function initializeEarthEngine() {
+            ee.data.authenticateViaBrowser(function() {
+                console.log('Earth Engine authentication successful');
+                ee.initialize(null, null, function() {
+                    console.log('Earth Engine initialized successfully');
+                }, function(error) {
+                    console.error('Earth Engine initialization failed:', error);
+                });
+            }, function(error) {
+                console.error('Earth Engine authentication failed:', error);
+            });
+        }
+
+        // Call initialization function when the page loads
+        initializeEarthEngine();
 
         // Function to show pre-demolition imagery from Earth Engine
         function showPreDemolitionImagery() {
             if (typeof ee !== 'undefined') {
                 console.log('Initializing Earth Engine...');
-                // Initialize Earth Engine API
-                ee.initialize(null, null, function() {
-                    console.log('Earth Engine initialized successfully.');
+                
+                // Define Sentinel-2 imagery for pre-demolition (2017)
+                var preDemolition = ee.ImageCollection('COPERNICUS/S2')
+                    .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
+                    .filterDate('2017-01-01', '2017-12-31')
+                    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+                    .median();
 
-                    // Define Sentinel-2 imagery for pre-demolition (2017)
-                    var preDemolition = ee.ImageCollection('COPERNICUS/S2')
-                        .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
-                        .filterDate('2017-01-01', '2017-12-31')
-                        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-                        .median();
+                // Visualize the imagery (RGB)
+                var visParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
 
-                    // Visualize the imagery (RGB)
-                    var visParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
-
-                    // Get the Earth Engine map ID for rendering imagery
-                    var mapId = preDemolition.getMapId(visParams);
+                // Get the Earth Engine map ID for rendering imagery
+                preDemolition.getMapId(visParams, function(mapId) {
                     console.log('Map ID generated:', mapId);
 
                     // Add the Earth Engine imagery as a Leaflet tile layer
@@ -73,7 +80,7 @@
                     }).addTo(map);
                     console.log('Earth Engine layer added to the map');
                 }, function(error) {
-                    console.error('Earth Engine initialization failed:', error);
+                    console.error('Error retrieving Map ID:', error);
                 });
             } else {
                 console.error('Earth Engine is not initialized.');
