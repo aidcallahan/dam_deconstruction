@@ -15,12 +15,12 @@
 
     <!-- Leaflet JS library -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    
+
     <!-- Earth Engine API -->
     <script src="https://cdn.jsdelivr.net/npm/earthengine-api@0.1.170/dist/ee_api.min.js"></script>
 
     <script>
-        // Initialize the map
+        // Initialize the Leaflet map
         var map = L.map('map').setView([37.0000, -104.5000], 12); // Coordinates of the dam (adjust as needed)
 
         // Add OpenStreetMap basemap
@@ -35,50 +35,46 @@
             showPreDemolitionImagery(); // Show pre-demolition imagery when marker is clicked
         });
 
-        // Initialize Earth Engine API
-        function initializeEE() {
-            ee.initialize(null, null, function() {
-                console.log('Earth Engine initialized successfully.');
-            }, function(error) {
-                console.error('Earth Engine initialization failed:', error);
-            });
-        }
-
         // Function to show pre-demolition imagery from Earth Engine
         function showPreDemolitionImagery() {
-            // Make sure Earth Engine is initialized
             if (typeof ee !== 'undefined') {
-                // Define the Sentinel-2 imagery (2017 for pre-demolition)
-                var preDemolition = ee.ImageCollection('COPERNICUS/S2')
-                    .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
-                    .filterDate('2017-01-01', '2017-12-31')
-                    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-                    .median();
+                // Initialize Earth Engine API
+                ee.initialize(null, null, function() {
+                    console.log('Earth Engine initialized successfully.');
 
-                // Visualize the imagery in true color (RGB)
-                var visParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
-                var preDemolitionLayer = ui.Map.Layer(preDemolition, visParams, 'Pre-Demolition 2017');
+                    // Define Sentinel-2 imagery for pre-demolition (2017)
+                    var preDemolition = ee.ImageCollection('COPERNICUS/S2')
+                        .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
+                        .filterDate('2017-01-01', '2017-12-31')
+                        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+                        .median();
 
-                // Earth Engine Map object for displaying imagery
-                var mapCenter = ee.Geometry.Point([-104.5000, 37.0000]);  // Adjust coordinates to the dam's location
-                var center = mapCenter.getInfo();
+                    // Visualize the imagery (RGB)
+                    var visParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
 
-                // Set center of Leaflet map to the coordinates of the dam
-                map.setView([center.coordinates[1], center.coordinates[0]], 12);
+                    // Get the Earth Engine map ID for rendering imagery
+                    var mapId = preDemolition.getMapId(visParams);
 
-                // Add Earth Engine imagery layer to the map
-                var eeLayer = L.tileLayer('', {
-                    url: 'https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + preDemolitionLayer.getMapId(),
-                    attribution: 'Earth Engine'
-                }).addTo(map);
+                    // Add the Earth Engine imagery as a Leaflet tile layer
+                    var eeLayer = L.tileLayer('https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + mapId.mapid, {
+                        attribution: 'Earth Engine',
+                        tileSize: 256
+                    }).addTo(map);
+                }, function(error) {
+                    console.error('Earth Engine initialization failed:', error);
+                });
             } else {
                 console.error('Earth Engine is not initialized.');
             }
         }
 
-        // Initialize Earth Engine API after page loads
+        // Ensure Earth Engine is initialized after page load
         window.onload = function() {
-            initializeEE();
+            if (typeof ee === 'undefined') {
+                console.error('Earth Engine is not loaded properly.');
+            } else {
+                console.log('Earth Engine is ready.');
+            }
         };
     </script>
 </body>
