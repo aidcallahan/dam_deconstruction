@@ -12,46 +12,74 @@
 </head>
 <body>
     <div id="map"></div>
+
+    <!-- Leaflet JS library -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <!-- Earth Engine API -->
     <script src="https://cdn.jsdelivr.net/npm/earthengine-api@0.1.170/dist/ee_api.min.js"></script>
+
     <script>
         // Initialize the map
-        var map = L.map('map').setView([37.0000, -104.5000], 12); // Adjust the coordinates of the dam site
+        var map = L.map('map').setView([37.0000, -104.5000], 12); // Coordinates of the dam (adjust as needed)
 
         // Add OpenStreetMap basemap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // Define a marker for the dam location
-        var damMarker = L.marker([37.0000, -104.5000]).addTo(map); // Adjust coordinates to actual dam site
+        // Define a marker for the dam location (clickable)
+        var damMarker = L.marker([37.0000, -104.5000]).addTo(map); // Adjust coordinates
         damMarker.bindPopup("DAM").openPopup();
 
-        // Handle click event on the marker
+        // Event listener for the marker click
         damMarker.on('click', function() {
-            showPreDemolitionImagery(); // Show the pre-demolition imagery
+            showPreDemolitionImagery(); // Show pre-demolition imagery when marker is clicked
         });
 
-        // Add Sentinel-2 imagery as a layer (you can use Google Earth Engine API here)
-        function showPreDemolitionImagery() {
-            // Initialize the Earth Engine API
-            ee.initialize();
-
-            // Sentinel-2 pre-demolition imagery for 2017 (adjust as per the original code)
-            var preDemolition = ee.ImageCollection('COPERNICUS/S2')
-                .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Adjust location
-                .filterDate('2017-01-01', '2017-12-31')
-                .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-                .median();
-
-            // Visualize the imagery (this should be styled as RGB for true-color)
-            var visParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
-            var preDemolitionLayer = ui.Map.Layer(preDemolition, visParams, 'Pre-Demolition 2017');
-            
-            // Add to Earth Engine layer
-            preDemolitionLayer.addTo(map);
+        // Initialize Earth Engine API
+        function initializeEE() {
+            ee.initialize(null, null, function() {
+                console.log('Earth Engine initialized successfully.');
+            }, function(error) {
+                console.error('Earth Engine initialization failed:', error);
+            });
         }
 
-        // You can add a post-demolition imagery layer as well, using the same concept
-        // Example for post-demolition imagery (2019) can be added here
+        // Function to show pre-demolition imagery from Earth Engine
+        function showPreDemolitionImagery() {
+            // Make sure Earth Engine is initialized
+            if (typeof ee !== 'undefined') {
+                // Define the Sentinel-2 imagery (2017 for pre-demolition)
+                var preDemolition = ee.ImageCollection('COPERNICUS/S2')
+                    .filterBounds(ee.Geometry.Point([-104.5000, 37.0000]))  // Location of the dam
+                    .filterDate('2017-01-01', '2017-12-31')
+                    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+                    .median();
+
+                // Visualize the imagery in true color (RGB)
+                var visParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 3000};
+                var preDemolitionLayer = ui.Map.Layer(preDemolition, visParams, 'Pre-Demolition 2017');
+
+                // Earth Engine Map object for displaying imagery
+                var mapCenter = ee.Geometry.Point([-104.5000, 37.0000]);  // Adjust coordinates to the dam's location
+                var center = mapCenter.getInfo();
+
+                // Set center of Leaflet map to the coordinates of the dam
+                map.setView([center.coordinates[1], center.coordinates[0]], 12);
+
+                // Add Earth Engine imagery layer to the map
+                var eeLayer = L.tileLayer('', {
+                    url: 'https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/' + preDemolitionLayer.getMapId(),
+                    attribution: 'Earth Engine'
+                }).addTo(map);
+            } else {
+                console.error('Earth Engine is not initialized.');
+            }
+        }
+
+        // Initialize Earth Engine API after page loads
+        window.onload = function() {
+            initializeEE();
+        };
     </script>
 </body>
 </html>
